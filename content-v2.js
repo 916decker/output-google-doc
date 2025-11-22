@@ -711,7 +711,13 @@ function injectButton(answerElement) {
 function processAnswers() {
   // Use the new robust detection system
   const answers = findAllAnswers();
-  answers.forEach(answer => injectButton(answer));
+
+  // ONLY inject button on the LAST answer (most recent)
+  // This prevents duplicate buttons all over the page
+  if (answers.length > 0) {
+    const lastAnswer = answers[answers.length - 1];
+    injectButton(lastAnswer);
+  }
 }
 
 /**
