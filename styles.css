@@ -1,0 +1,154 @@
+/**
+ * Styles for "Send to Google Docs" button
+ */
+
+/* Button container */
+.send-to-gdocs-container {
+  margin-top: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Main button */
+.send-to-gdocs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #4285F4;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.send-to-gdocs-btn:hover {
+  background: #3367D6;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  transform: translateY(-1px);
+}
+
+.send-to-gdocs-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.send-to-gdocs-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Success state */
+.send-to-gdocs-btn.success {
+  background: #0F9D58;
+}
+
+.send-to-gdocs-btn.success:hover {
+  background: #0F9D58;
+}
+
+/* Error state */
+.send-to-gdocs-btn.error {
+  background: #D93025;
+}
+
+.send-to-gdocs-btn.error:hover {
+  background: #D93025;
+}
+
+/* Loading spinner */
+.send-to-gdocs-btn .spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.send-to-gdocs-btn .spinner circle {
+  animation: dash 1.5s ease-in-out infinite;
+}
+
+@keyframes dash {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dashoffset: 15.7;
+  }
+  100% {
+    stroke-dashoffset: 31.4;
+  }
+}
+
+/* Notification */
+.gdocs-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  z-index: 10000;
+  opacity: 0;
+  transform: translateX(400px);
+  transition: all 0.3s ease;
+  max-width: 350px;
+  border-left: 4px solid #0F9D58;
+}
+
+.gdocs-notification.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.gdocs-notification.error {
+  border-left-color: #D93025;
+  color: #D93025;
+}
+
+.gdocs-notification a {
+  color: #4285F4;
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.gdocs-notification a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .send-to-gdocs-container {
+    justify-content: flex-start;
+  }
+
+  .send-to-gdocs-btn {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+
+  .gdocs-notification {
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+}

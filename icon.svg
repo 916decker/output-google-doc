@@ -1,0 +1,14 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#4285F4"/>
+
+  <!-- Google Docs icon -->
+  <path d="M74.67 26.67H42.67C39.35 26.67 36.67 29.35 36.67 32.67V95.33C36.67 98.65 39.35 101.33 42.67 101.33H85.33C88.65 101.33 91.33 98.65 91.33 95.33V42.67L74.67 26.67Z" fill="white"/>
+  <path d="M74.67 26.67V42.67H91.33" fill="#A1C2FA"/>
+
+  <!-- Document lines -->
+  <rect x="48" y="56" width="32" height="3" rx="1.5" fill="#4285F4"/>
+  <rect x="48" y="64" width="32" height="3" rx="1.5" fill="#4285F4"/>
+  <rect x="48" y="72" width="24" height="3" rx="1.5" fill="#4285F4"/>
+  <rect x="48" y="80" width="28" height="3" rx="1.5" fill="#4285F4"/>
+</svg>

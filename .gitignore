@@ -1,0 +1,24 @@
+# Node modules (if user runs npm install)
+node_modules/
+
+# Generated PNG icons (can be regenerated)
+# Uncomment the next line if you want to exclude generated icons
+# icon16.png
+# icon48.png
+# icon128.png
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
