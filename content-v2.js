@@ -225,15 +225,115 @@ function createButtonGroup() {
 }
 
 /**
- * Extract clean text content
+ * Convert HTML to Markdown
+ */
+function htmlToMarkdown(element) {
+  const clone = element.cloneNode(true);
+
+  // Remove our buttons
+  clone.querySelectorAll('.send-to-gdocs-btn, .send-to-gdocs-container').forEach(el => el.remove());
+
+  let markdown = '';
+
+  function processNode(node) {
+    // Handle text nodes
+    if (node.nodeType === Node.TEXT_NODE) {
+      return node.textContent;
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return '';
+    }
+
+    const tag = node.tagName.toLowerCase();
+    let content = '';
+
+    // Process children
+    for (const child of node.childNodes) {
+      content += processNode(child);
+    }
+
+    // Convert based on tag
+    switch (tag) {
+      // Headings
+      case 'h1': return '\n# ' + content.trim() + '\n\n';
+      case 'h2': return '\n## ' + content.trim() + '\n\n';
+      case 'h3': return '\n### ' + content.trim() + '\n\n';
+      case 'h4': return '\n#### ' + content.trim() + '\n\n';
+      case 'h5': return '\n##### ' + content.trim() + '\n\n';
+      case 'h6': return '\n###### ' + content.trim() + '\n\n';
+
+      // Paragraphs
+      case 'p': return content.trim() + '\n\n';
+
+      // Line breaks
+      case 'br': return '\n';
+
+      // Lists
+      case 'ul':
+      case 'ol':
+        return '\n' + content + '\n';
+
+      case 'li':
+        const isOrdered = node.parentElement.tagName.toLowerCase() === 'ol';
+        const prefix = isOrdered ? '1. ' : '- ';
+        return prefix + content.trim() + '\n';
+
+      // Code
+      case 'pre':
+      case 'code':
+        if (tag === 'pre' || content.includes('\n')) {
+          return '\n```\n' + content + '\n```\n\n';
+        } else {
+          return '`' + content + '`';
+        }
+
+      // Formatting
+      case 'strong':
+      case 'b':
+        return '**' + content + '**';
+
+      case 'em':
+      case 'i':
+        return '*' + content + '*';
+
+      // Links
+      case 'a':
+        const href = node.getAttribute('href');
+        if (href) {
+          return '[' + content + '](' + href + ')';
+        }
+        return content;
+
+      // Block quotes
+      case 'blockquote':
+        return '\n> ' + content.trim().replace(/\n/g, '\n> ') + '\n\n';
+
+      // Divs and spans - just pass through content
+      case 'div':
+      case 'span':
+      case 'article':
+      case 'section':
+        return content;
+
+      default:
+        return content;
+    }
+  }
+
+  markdown = processNode(clone);
+
+  // Clean up excessive newlines
+  markdown = markdown.replace(/\n{3,}/g, '\n\n').trim();
+
+  return markdown;
+}
+
+/**
+ * Extract clean text content (wrapper for backward compatibility)
  */
 function extractTextContent(element) {
-  const clone = element.cloneNode(true);
-  const buttons = clone.querySelectorAll('.send-to-gdocs-btn, .send-to-gdocs-container');
-  buttons.forEach(btn => btn.remove());
-
-  let text = clone.innerText || clone.textContent;
-  return text.trim().replace(/\n{3,}/g, '\n\n');
+  return htmlToMarkdown(element);
 }
 
 /**
