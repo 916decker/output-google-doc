@@ -1,0 +1,127 @@
+<!-- Modal Template for Save to Google Docs -->
+<!-- This template is injected by content.js when button is clicked -->
+
+<div class="gdocs-modal-overlay">
+  <div class="gdocs-modal">
+    <div class="gdocs-modal-header">
+      <h2>📄 Save to Google Docs</h2>
+      <button class="gdocs-modal-close" title="Close">&times;</button>
+    </div>
+
+    <div class="gdocs-modal-body">
+      <!-- Folder Selection -->
+      <div class="gdocs-form-group">
+        <label for="gdocs-folder">
+          📁 Save to Folder
+          <span class="gdocs-help-icon" title="Choose where to save this document">?</span>
+        </label>
+        <div class="gdocs-folder-select-container">
+          <select id="gdocs-folder" class="gdocs-select">
+            <option value="">📂 My Drive (Root)</option>
+            <option value="loading">Loading folders...</option>
+          </select>
+          <button class="gdocs-browse-btn" id="gdocs-browse-folders" title="Browse all folders">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+            Browse
+          </button>
+        </div>
+        <div class="gdocs-selected-path" id="gdocs-selected-path"></div>
+      </div>
+
+      <!-- Project Name -->
+      <div class="gdocs-form-group">
+        <label for="gdocs-project">
+          🎯 Project Name
+          <span class="gdocs-optional">(optional)</span>
+        </label>
+        <input
+          type="text"
+          id="gdocs-project"
+          class="gdocs-input"
+          placeholder="e.g., Q4 Campaign, Thesis Research, Client Acme"
+          maxlength="100"
+        >
+      </div>
+
+      <!-- Tags -->
+      <div class="gdocs-form-group">
+        <label for="gdocs-tags">
+          🏷️ Tags
+          <span class="gdocs-optional">(comma-separated)</span>
+        </label>
+        <input
+          type="text"
+          id="gdocs-tags"
+          class="gdocs-input"
+          placeholder="e.g., AI, marketing, research, python"
+          maxlength="200"
+        >
+        <div class="gdocs-tag-suggestions" id="gdocs-tag-suggestions"></div>
+      </div>
+
+      <!-- Optional Notes -->
+      <div class="gdocs-form-group">
+        <label for="gdocs-notes">
+          📝 Notes
+          <span class="gdocs-optional">(optional)</span>
+        </label>
+        <textarea
+          id="gdocs-notes"
+          class="gdocs-textarea"
+          placeholder="Add context, reminders, or custom notes..."
+          rows="2"
+          maxlength="500"
+        ></textarea>
+      </div>
+
+      <!-- Document Name -->
+      <div class="gdocs-form-group">
+        <label for="gdocs-docname">
+          📄 Document Name
+          <span class="gdocs-help-icon" title="Auto-generated, but you can edit it">?</span>
+        </label>
+        <input
+          type="text"
+          id="gdocs-docname"
+          class="gdocs-input gdocs-docname"
+          placeholder="Auto-generated name"
+          maxlength="150"
+        >
+        <small class="gdocs-hint">Will be saved as: <span id="gdocs-filename-preview"></span>.docx</small>
+      </div>
+
+      <!-- Preview Section -->
+      <div class="gdocs-preview-section">
+        <div class="gdocs-preview-header">
+          <strong>Preview:</strong>
+          <span id="gdocs-preview-chars"></span>
+        </div>
+        <div class="gdocs-preview-content" id="gdocs-preview-content">
+          [Content preview will appear here...]
+        </div>
+      </div>
+    </div>
+
+    <div class="gdocs-modal-footer">
+      <button class="gdocs-btn gdocs-btn-secondary" id="gdocs-cancel-btn">
+        Cancel
+      </button>
+      <button class="gdocs-btn gdocs-btn-primary" id="gdocs-save-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+        Save to Drive
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="gdocs-modal-loading" id="gdocs-modal-loading" style="display: none;">
+      <div class="gdocs-spinner-large"></div>
+      <p>Saving to Google Drive...</p>
+    </div>
+  </div>
+</div>

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Send to Google Docs",
-  "version": "1.0.0",
-  "description": "Add a 'Send to Google Docs' button to AI chat platforms like Perplexity and Comet",
+  "name": "Send to Google Docs - Smart Organizer",
+  "version": "2.0.0",
+  "description": "One-click save AI answers to organized Google Docs with folders, tags, and smart metadata",
   "permissions": [
     "storage",
     "identity"
@@ -11,10 +11,11 @@
     "https://www.perplexity.ai/*",
     "https://comet.com/*",
     "https://docs.google.com/*",
-    "https://www.googleapis.com/*"
+    "https://www.googleapis.com/*",
+    "https://drive.google.com/*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background-enhanced.js"
   },
   "content_scripts": [
     {
@@ -22,8 +23,8 @@
         "https://www.perplexity.ai/*",
         "https://comet.com/*"
       ],
-      "js": ["content.js"],
-      "css": ["styles.css"],
+      "js": ["content-v2.js"],
+      "css": ["styles-enhanced.css"],
       "run_at": "document_idle"
     }
   ],
@@ -44,7 +45,8 @@
     "client_id": "YOUR_CLIENT_ID_HERE.apps.googleusercontent.com",
     "scopes": [
       "https://www.googleapis.com/auth/documents",
-      "https://www.googleapis.com/auth/drive.file"
+      "https://www.googleapis.com/auth/drive.file",
+      "https://www.googleapis.com/auth/drive.metadata.readonly"
     ]
   }
 }
