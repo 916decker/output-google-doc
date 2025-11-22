@@ -309,6 +309,44 @@ function htmlToMarkdown(element) {
       case 'blockquote':
         return '\n> ' + content.trim().replace(/\n/g, '\n> ') + '\n\n';
 
+      // Tables - convert to readable format
+      case 'table':
+        return '\n' + content + '\n';
+
+      case 'thead':
+        // Table headers - make them bold
+        return '**' + content.trim() + '**\n\n';
+
+      case 'tbody':
+        return content;
+
+      case 'tr':
+        // Each table row becomes a new line with bullet
+        const trimmedContent = content.trim();
+        if (trimmedContent) {
+          // If content looks like a numbered item (starts with digit), keep it
+          // Otherwise add a bullet point
+          if (/^\d+/.test(trimmedContent)) {
+            return trimmedContent + '\n\n';
+          } else {
+            return '- ' + trimmedContent + '\n\n';
+          }
+        }
+        return '';
+
+      case 'th':
+      case 'td':
+        // Table cells - separate with spaces or line breaks
+        const cellContent = content.trim();
+        if (cellContent) {
+          // If this looks like it should be on its own line (long content)
+          if (cellContent.length > 50 || cellContent.includes('\n')) {
+            return cellContent + '\n';
+          }
+          return cellContent + ' ';
+        }
+        return '';
+
       // Divs and spans - just pass through content
       case 'div':
       case 'span':
