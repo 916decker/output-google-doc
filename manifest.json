@@ -10,6 +10,10 @@
   "host_permissions": [
     "https://www.perplexity.ai/*",
     "https://comet.com/*",
+    "https://chat.openai.com/*",
+    "https://chatgpt.com/*",
+    "https://claude.ai/*",
+    "https://gemini.google.com/*",
     "https://docs.google.com/*",
     "https://www.googleapis.com/*",
     "https://drive.google.com/*"
@@ -21,7 +25,11 @@
     {
       "matches": [
         "https://www.perplexity.ai/*",
-        "https://comet.com/*"
+        "https://comet.com/*",
+        "https://chat.openai.com/*",
+        "https://chatgpt.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*"
       ],
       "js": ["content-v2.js"],
       "css": ["styles-enhanced.css"],

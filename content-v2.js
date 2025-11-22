@@ -14,8 +14,24 @@ const SITE_CONFIGS = {
     answerSelector: '.message-content, [class*="answer"], [class*="response"]',
     insertPosition: 'afterend'
   },
+  'chat.openai.com': {
+    answerSelector: '[data-message-author-role="assistant"], .agent-turn, [class*="markdown"]',
+    insertPosition: 'afterend'
+  },
+  'chatgpt.com': {
+    answerSelector: '[data-message-author-role="assistant"], .agent-turn, [class*="markdown"]',
+    insertPosition: 'afterend'
+  },
+  'claude.ai': {
+    answerSelector: '[data-is-streaming="false"], .font-claude-message, [class*="MessageContent"]',
+    insertPosition: 'afterend'
+  },
+  'gemini.google.com': {
+    answerSelector: '.model-response, [class*="response"], message-content',
+    insertPosition: 'afterend'
+  },
   default: {
-    answerSelector: '[class*="answer"], [class*="response"], [class*="message"]',
+    answerSelector: '[class*="answer"], [class*="response"], [class*="message"], [role="article"]',
     insertPosition: 'afterend'
   }
 };

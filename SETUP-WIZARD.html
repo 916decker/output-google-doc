@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Setup Wizard - AI to Google Docs</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .wizard {
+      max-width: 700px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #4285F4 0%, #34A853 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      font-size: 16px;
+      opacity: 0.95;
+    }
+
+    .progress {
+      display: flex;
+      justify-content: space-between;
+      padding: 20px 30px;
+      background: #f8f9fa;
+      border-bottom: 1px solid #e8eaed;
+    }
+
+    .progress-step {
+      flex: 1;
+      text-align: center;
+      position: relative;
+      padding: 10px;
+    }
+
+    .progress-step::after {
+      content: '';
+      position: absolute;
+      top: 20px;
+      right: -50%;
+      width: 100%;
+      height: 2px;
+      background: #dadce0;
+      z-index: 0;
+    }
+
+    .progress-step:last-child::after {
+      display: none;
+    }
+
+    .progress-step.active .step-number {
+      background: #4285F4;
+      color: white;
+    }
+
+    .progress-step.completed .step-number {
+      background: #34A853;
+      color: white;
+    }
+
+    .step-number {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #dadce0;
+      color: #5f6368;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 8px;
+      font-weight: 600;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step-label {
+      font-size: 12px;
+      color: #5f6368;
+      font-weight: 500;
+    }
+
+    .content {
+      padding: 40px;
+    }
+
+    .step-content {
+      display: none;
+    }
+
+    .step-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 {
+      font-size: 24px;
+      color: #202124;
+      margin-bottom: 20px;
+    }
+
+    .instruction {
+      background: #E8F0FE;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border-left: 4px solid #4285F4;
+      line-height: 1.6;
+    }
+
+    .instruction strong {
+      color: #4285F4;
+    }
+
+    .action-button {
+      background: #4285F4;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px 10px 10px 0;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3);
+    }
+
+    .action-button:hover {
+      background: #3367D6;
+      box-shadow: 0 4px 12px rgba(66, 133, 244, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .action-button.secondary {
+      background: white;
+      color: #4285F4;
+      border: 2px solid #4285F4;
+    }
+
+    .action-button.secondary:hover {
+      background: #E8F0FE;
+    }
+
+    .input-group {
+      margin: 20px 0;
+    }
+
+    .input-group label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #202124;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #dadce0;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: #4285F4;
+      box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+    }
+
+    .success-box {
+      background: #E6F4EA;
+      border: 2px solid #34A853;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .success-box h3 {
+      color: #137333;
+      margin-bottom: 10px;
+    }
+
+    .checklist {
+      list-style: none;
+      margin: 20px 0;
+    }
+
+    .checklist li {
+      padding: 12px;
+      margin: 8px 0;
+      background: #f8f9fa;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .checklist li::before {
+      content: '✓';
+      background: #34A853;
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      padding-top: 30px;
+      border-top: 1px solid #e8eaed;
+    }
+
+    code {
+      background: #f8f9fa;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: #D93025;
+    }
+
+    .copy-btn {
+      background: #34A853;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-left: 10px;
+    }
+
+    .copy-btn:hover {
+      background: #2d8a47;
+    }
+  </style>
+</head>
+<body>
+  <div class="wizard">
+    <div class="header">
+      <h1>🚀 Setup Wizard</h1>
+      <p>Get your AI to Google Docs extension running in 8 minutes</p>
+    </div>
+
+    <div class="progress">
+      <div class="progress-step active" id="progress-1">
+        <div class="step-number">1</div>
+        <div class="step-label">Icons</div>
+      </div>
+      <div class="progress-step" id="progress-2">
+        <div class="step-number">2</div>
+        <div class="step-label">Google</div>
+      </div>
+      <div class="progress-step" id="progress-3">
+        <div class="step-number">3</div>
+        <div class="step-label">Install</div>
+      </div>
+      <div class="progress-step" id="progress-4">
+        <div class="step-number">4</div>
+        <div class="step-label">Done</div>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- STEP 1: Icons -->
+      <div class="step-content active" id="step-1">
+        <h2>Step 1: Generate Icons (1 minute)</h2>
+
+        <div class="instruction">
+          <strong>What you'll do:</strong> Generate 3 icon files needed by the extension.
+        </div>
+
+        <button class="action-button" onclick="openIconGenerator()">
+          🎨 Open Icon Generator
+        </button>
+
+        <div class="instruction" style="margin-top: 20px;">
+          <strong>After generating:</strong><br>
+          1. The 3 PNG files will download automatically<br>
+          2. Move them from Downloads to your extension folder<br>
+          3. Come back here and click "Next"
+        </div>
+
+        <div class="nav-buttons">
+          <div></div>
+          <button class="action-button" onclick="nextStep()">Next →</button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Google Setup -->
+      <div class="step-content" id="step-2">
+        <h2>Step 2: Google Cloud Setup (5 minutes)</h2>
+
+        <div class="instruction">
+          <strong>What you'll do:</strong> Get your secret key from Google so the extension can access Docs & Drive.
+        </div>
+
+        <h3 style="margin: 20px 0 10px;">2A. Create Project</h3>
+        <button class="action-button" onclick="openURL('https://console.cloud.google.com/projectcreate')">
+          Open Google Cloud Console
+        </button>
+        <p style="margin-top: 10px; color: #5f6368;">Create a project named "AI-Docs-Saver"</p>
+
+        <h3 style="margin: 30px 0 10px;">2B. Enable APIs</h3>
+        <button class="action-button" onclick="openURL('https://console.cloud.google.com/apis/library/docs.googleapis.com')">
+          Enable Docs API
+        </button>
+        <button class="action-button secondary" onclick="openURL('https://console.cloud.google.com/apis/library/drive.googleapis.com')">
+          Enable Drive API
+        </button>
+
+        <h3 style="margin: 30px 0 10px;">2C. Get Client ID</h3>
+        <button class="action-button" onclick="openURL('https://console.cloud.google.com/apis/credentials')">
+          Open Credentials Page
+        </button>
+        <p style="margin-top: 10px; color: #5f6368; line-height: 1.6;">
+          1. Click "Configure Consent Screen" → External → Create<br>
+          2. Fill app name & your email → Save and Continue (3 times)<br>
+          3. Create Credentials → OAuth client ID → Chrome Extension<br>
+          4. <strong>Copy your Client ID</strong> (we'll use it next)
+        </p>
+
+        <div class="input-group">
+          <label>Paste Your Client ID Here:</label>
+          <input type="text" id="clientId" placeholder="123456789-abc123.apps.googleusercontent.com">
+        </div>
+
+        <div class="nav-buttons">
+          <button class="action-button secondary" onclick="prevStep()">← Back</button>
+          <button class="action-button" onclick="saveClientId()">Save & Continue →</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Install Extension -->
+      <div class="step-content" id="step-3">
+        <h2>Step 3: Install in Chrome (2 minutes)</h2>
+
+        <div class="instruction">
+          <strong>What you'll do:</strong> Load the extension into Chrome and connect it to Google.
+        </div>
+
+        <h3 style="margin: 20px 0 10px;">3A. Load Extension</h3>
+        <button class="action-button" onclick="openURL('chrome://extensions/')">
+          Open chrome://extensions/
+        </button>
+        <ul class="checklist">
+          <li>Turn on "Developer mode" (top-right toggle)</li>
+          <li>Click "Load unpacked"</li>
+          <li>Select your extension folder</li>
+        </ul>
+
+        <h3 style="margin: 30px 0 10px;">3B. Get Extension ID</h3>
+        <div class="input-group">
+          <label>Copy Extension ID from Chrome and paste here:</label>
+          <input type="text" id="extensionId" placeholder="abcdefghijklmnopqrstuvwxyz">
+        </div>
+
+        <h3 style="margin: 30px 0 10px;">3C. Connect to Google</h3>
+        <button class="action-button" onclick="openURL('https://console.cloud.google.com/apis/credentials')" id="addExtensionBtn" disabled>
+          Add Extension ID to Google
+        </button>
+        <p style="margin-top: 10px; color: #5f6368;">
+          Paste your Extension ID in the "Application ID" field → Save
+        </p>
+
+        <div class="nav-buttons">
+          <button class="action-button secondary" onclick="prevStep()">← Back</button>
+          <button class="action-button" onclick="nextStep()">Next →</button>
+        </div>
+      </div>
+
+      <!-- STEP 4: Done! -->
+      <div class="step-content" id="step-4">
+        <h2>🎉 All Done!</h2>
+
+        <div class="success-box">
+          <h3>✅ Extension is Ready!</h3>
+          <p>You can now save AI answers to Google Docs with one click</p>
+        </div>
+
+        <h3 style="margin: 30px 0 10px;">Try It Now:</h3>
+        <button class="action-button" onclick="openURL('https://www.perplexity.ai')">
+          🔍 Open Perplexity
+        </button>
+        <button class="action-button secondary" onclick="openURL('https://chatgpt.com')">
+          💬 Open ChatGPT
+        </button>
+        <button class="action-button secondary" onclick="openURL('https://claude.ai')">
+          🤖 Open Claude
+        </button>
+
+        <div class="instruction" style="margin-top: 30px;">
+          <strong>What to do:</strong><br>
+          1. Ask any question on one of these AI platforms<br>
+          2. Look for the blue <code>[📄 Quick Save]</code> button below the answer<br>
+          3. Click it!<br>
+          4. Allow permissions when asked<br>
+          5. Check your Google Drive - your answer is there! 🎊
+        </div>
+
+        <h3 style="margin: 30px 0 10px;">Supported Platforms:</h3>
+        <ul class="checklist">
+          <li>Perplexity.ai</li>
+          <li>ChatGPT (chat.openai.com & chatgpt.com)</li>
+          <li>Claude.ai</li>
+          <li>Gemini (gemini.google.com)</li>
+          <li>Comet Browser</li>
+        </ul>
+
+        <div class="nav-buttons">
+          <button class="action-button secondary" onclick="window.location.reload()">
+            🔄 Start Over
+          </button>
+          <button class="action-button" onclick="window.close()">
+            ✓ All Done!
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentStep = 1;
+    let savedClientId = '';
+    let savedExtensionId = '';
+
+    function openURL(url) {
+      window.open(url, '_blank');
+    }
+
+    function openIconGenerator() {
+      window.open('GENERATE-ICONS-AUTO.html', '_blank');
+    }
+
+    function nextStep() {
+      if (currentStep < 4) {
+        // Hide current step
+        document.getElementById(`step-${currentStep}`).classList.remove('active');
+        document.getElementById(`progress-${currentStep}`).classList.add('completed');
+        document.getElementById(`progress-${currentStep}`).classList.remove('active');
+
+        // Show next step
+        currentStep++;
+        document.getElementById(`step-${currentStep}`).classList.add('active');
+        document.getElementById(`progress-${currentStep}`).classList.add('active');
+
+        // Scroll to top
+        window.scrollTo(0, 0);
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 1) {
+        // Hide current step
+        document.getElementById(`step-${currentStep}`).classList.remove('active');
+        document.getElementById(`progress-${currentStep}`).classList.remove('active');
+
+        // Show previous step
+        currentStep--;
+        document.getElementById(`step-${currentStep}`).classList.add('active');
+        document.getElementById(`progress-${currentStep}`).classList.remove('completed');
+
+        // Scroll to top
+        window.scrollTo(0, 0);
+      }
+    }
+
+    function saveClientId() {
+      const clientId = document.getElementById('clientId').value.trim();
+
+      if (!clientId || !clientId.includes('.apps.googleusercontent.com')) {
+        alert('Please enter a valid Client ID (should end with .apps.googleusercontent.com)');
+        return;
+      }
+
+      savedClientId = clientId;
+
+      // Show instructions for updating manifest
+      const updateInstructions = `
+Great! Your Client ID is saved.
+
+NEXT STEP:
+1. Open "manifest.json" in a text editor
+2. Find line 44: "client_id": "YOUR_CLIENT_ID_HERE.apps.googleusercontent.com"
+3. Replace YOUR_CLIENT_ID_HERE with: ${clientId}
+4. Save the file
+5. Come back here and click "Next"
+
+Copy this for easy pasting:
+${clientId}
+      `;
+
+      if (confirm(updateInstructions.trim() + '\n\nClick OK to copy Client ID to clipboard')) {
+        navigator.clipboard.writeText(clientId);
+      }
+
+      nextStep();
+    }
+
+    // Enable "Add Extension ID" button when Extension ID is entered
+    document.getElementById('extensionId')?.addEventListener('input', function(e) {
+      const btn = document.getElementById('addExtensionBtn');
+      if (e.target.value.trim().length > 10) {
+        btn.disabled = false;
+        savedExtensionId = e.target.value.trim();
+      } else {
+        btn.disabled = true;
+      }
+    });
+  </script>
+</body>
+</html>
