@@ -41,9 +41,374 @@ async function getSettings() {
     chrome.storage.sync.get({
       lastUsedFolder: null,
       favoriteFolders: [],
-      defaultTags: []
+      defaultTags: [],
+      defaultFormat: 'markdown' // New: default to markdown
     }, resolve);
   });
+}
+
+/**
+ * MARKDOWN PARSER - Convert markdown to Google Docs formatting
+ */
+
+/**
+ * Parse markdown content into structured elements
+ */
+function parseMarkdown(text) {
+  const lines = text.split('\n');
+  const elements = [];
+  let currentElement = null;
+  let inCodeBlock = false;
+  let codeBlockContent = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Code block detection
+    if (line.trim().startsWith('```')) {
+      if (inCodeBlock) {
+        // End code block
+        elements.push({
+          type: 'code',
+          content: codeBlockContent.join('\n'),
+          language: codeBlockContent[0] || 'text'
+        });
+        codeBlockContent = [];
+        inCodeBlock = false;
+      } else {
+        // Start code block
+        inCodeBlock = true;
+        const language = line.trim().substring(3).trim();
+        codeBlockContent = [language];
+      }
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeBlockContent.push(line);
+      continue;
+    }
+
+    // Heading detection
+    const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const text = headingMatch[2];
+      elements.push({
+        type: 'heading',
+        level: level,
+        content: text
+      });
+      continue;
+    }
+
+    // Bullet list detection
+    if (line.trim().match(/^[-*+]\s+(.+)$/)) {
+      const content = line.trim().substring(2);
+      elements.push({
+        type: 'bullet',
+        content: content
+      });
+      continue;
+    }
+
+    // Numbered list detection
+    if (line.trim().match(/^\d+\.\s+(.+)$/)) {
+      const content = line.trim().replace(/^\d+\.\s+/, '');
+      elements.push({
+        type: 'numbered',
+        content: content
+      });
+      continue;
+    }
+
+    // Empty line
+    if (line.trim() === '') {
+      if (currentElement && currentElement.type === 'paragraph') {
+        elements.push(currentElement);
+        currentElement = null;
+      }
+      continue;
+    }
+
+    // Regular paragraph
+    if (!currentElement || currentElement.type !== 'paragraph') {
+      currentElement = {
+        type: 'paragraph',
+        content: line
+      };
+    } else {
+      currentElement.content += ' ' + line;
+    }
+  }
+
+  // Add last element
+  if (currentElement) {
+    elements.push(currentElement);
+  }
+
+  return elements;
+}
+
+/**
+ * Parse inline markdown (bold, italic, code, links)
+ */
+function parseInlineMarkdown(text) {
+  const segments = [];
+  let current = '';
+  let i = 0;
+
+  while (i < text.length) {
+    // Bold (**text** or __text__)
+    if (text.substring(i, i + 2) === '**' || text.substring(i, i + 2) === '__') {
+      if (current) segments.push({ type: 'text', content: current });
+      current = '';
+
+      const endMarker = text.substring(i, i + 2);
+      const endPos = text.indexOf(endMarker, i + 2);
+      if (endPos !== -1) {
+        segments.push({
+          type: 'bold',
+          content: text.substring(i + 2, endPos)
+        });
+        i = endPos + 2;
+        continue;
+      }
+    }
+
+    // Italic (*text* or _text_)
+    if ((text[i] === '*' || text[i] === '_') && text[i + 1] !== text[i]) {
+      if (current) segments.push({ type: 'text', content: current });
+      current = '';
+
+      const marker = text[i];
+      const endPos = text.indexOf(marker, i + 1);
+      if (endPos !== -1 && text[endPos - 1] !== '\\') {
+        segments.push({
+          type: 'italic',
+          content: text.substring(i + 1, endPos)
+        });
+        i = endPos + 1;
+        continue;
+      }
+    }
+
+    // Inline code (`code`)
+    if (text[i] === '`') {
+      if (current) segments.push({ type: 'text', content: current });
+      current = '';
+
+      const endPos = text.indexOf('`', i + 1);
+      if (endPos !== -1) {
+        segments.push({
+          type: 'code',
+          content: text.substring(i + 1, endPos)
+        });
+        i = endPos + 1;
+        continue;
+      }
+    }
+
+    // Links ([text](url))
+    if (text[i] === '[') {
+      const closeBracket = text.indexOf(']', i);
+      const openParen = text.indexOf('(', closeBracket);
+      const closeParen = text.indexOf(')', openParen);
+
+      if (closeBracket !== -1 && openParen === closeBracket + 1 && closeParen !== -1) {
+        if (current) segments.push({ type: 'text', content: current });
+        current = '';
+
+        segments.push({
+          type: 'link',
+          content: text.substring(i + 1, closeBracket),
+          url: text.substring(openParen + 1, closeParen)
+        });
+        i = closeParen + 1;
+        continue;
+      }
+    }
+
+    current += text[i];
+    i++;
+  }
+
+  if (current) segments.push({ type: 'text', content: current });
+  return segments;
+}
+
+/**
+ * Convert markdown elements to Google Docs API requests
+ */
+function convertToGoogleDocsRequests(elements, startIndex) {
+  const requests = [];
+  let currentIndex = startIndex;
+
+  elements.forEach(element => {
+    switch (element.type) {
+      case 'heading':
+        // Insert text
+        requests.push({
+          insertText: {
+            location: { index: currentIndex },
+            text: element.content + '\n'
+          }
+        });
+
+        // Apply heading style
+        requests.push({
+          updateParagraphStyle: {
+            range: {
+              startIndex: currentIndex,
+              endIndex: currentIndex + element.content.length
+            },
+            paragraphStyle: {
+              namedStyleType: `HEADING_${element.level}`
+            },
+            fields: 'namedStyleType'
+          }
+        });
+
+        currentIndex += element.content.length + 1;
+        break;
+
+      case 'bullet':
+      case 'numbered':
+        // Insert text
+        const bulletText = element.content + '\n';
+        requests.push({
+          insertText: {
+            location: { index: currentIndex },
+            text: bulletText
+          }
+        });
+
+        // Apply bullet/numbered list
+        requests.push({
+          createParagraphBullets: {
+            range: {
+              startIndex: currentIndex,
+              endIndex: currentIndex + bulletText.length - 1
+            },
+            bulletPreset: element.type === 'bullet' ? 'BULLET_DISC_CIRCLE_SQUARE' : 'NUMBERED_DECIMAL_ALPHA_ROMAN'
+          }
+        });
+
+        currentIndex += bulletText.length;
+        break;
+
+      case 'code':
+        // Insert code block with gray background
+        const codeText = element.content + '\n\n';
+        requests.push({
+          insertText: {
+            location: { index: currentIndex },
+            text: codeText
+          }
+        });
+
+        // Apply code formatting (monospace + gray background)
+        requests.push({
+          updateTextStyle: {
+            range: {
+              startIndex: currentIndex,
+              endIndex: currentIndex + codeText.length
+            },
+            textStyle: {
+              weightedFontFamily: { fontFamily: 'Courier New' },
+              fontSize: { magnitude: 10, unit: 'PT' },
+              backgroundColor: {
+                color: { rgbColor: { red: 0.95, green: 0.95, blue: 0.95 } }
+              }
+            },
+            fields: 'weightedFontFamily,fontSize,backgroundColor'
+          }
+        });
+
+        currentIndex += codeText.length;
+        break;
+
+      case 'paragraph':
+        // Parse inline formatting
+        const segments = parseInlineMarkdown(element.content);
+        const paraText = element.content + '\n';
+
+        requests.push({
+          insertText: {
+            location: { index: currentIndex },
+            text: paraText
+          }
+        });
+
+        // Apply inline formatting
+        let segmentIndex = currentIndex;
+        segments.forEach(segment => {
+          if (segment.type === 'bold') {
+            requests.push({
+              updateTextStyle: {
+                range: {
+                  startIndex: segmentIndex,
+                  endIndex: segmentIndex + segment.content.length
+                },
+                textStyle: { bold: true },
+                fields: 'bold'
+              }
+            });
+          } else if (segment.type === 'italic') {
+            requests.push({
+              updateTextStyle: {
+                range: {
+                  startIndex: segmentIndex,
+                  endIndex: segmentIndex + segment.content.length
+                },
+                textStyle: { italic: true },
+                fields: 'italic'
+              }
+            });
+          } else if (segment.type === 'code') {
+            requests.push({
+              updateTextStyle: {
+                range: {
+                  startIndex: segmentIndex,
+                  endIndex: segmentIndex + segment.content.length
+                },
+                textStyle: {
+                  weightedFontFamily: { fontFamily: 'Courier New' },
+                  backgroundColor: {
+                    color: { rgbColor: { red: 0.95, green: 0.95, blue: 0.95 } }
+                  }
+                },
+                fields: 'weightedFontFamily,backgroundColor'
+              }
+            });
+          } else if (segment.type === 'link') {
+            requests.push({
+              updateTextStyle: {
+                range: {
+                  startIndex: segmentIndex,
+                  endIndex: segmentIndex + segment.content.length
+                },
+                textStyle: {
+                  link: { url: segment.url },
+                  foregroundColor: {
+                    color: { rgbColor: { red: 0.26, green: 0.52, blue: 0.96 } }
+                  },
+                  underline: true
+                },
+                fields: 'link,foregroundColor,underline'
+              }
+            });
+          }
+
+          segmentIndex += segment.content.length;
+        });
+
+        currentIndex += paraText.length;
+        break;
+    }
+  });
+
+  return { requests, endIndex: currentIndex };
 }
 
 /**
@@ -143,6 +508,23 @@ async function createDocumentWithMetadata(token, title, content, metadata, sourc
  */
 async function addContentWithMetadata(token, docId, content, metadata, source) {
   const timestamp = new Date(source.timestamp).toLocaleString();
+  const format = metadata.format || 'markdown'; // Default to markdown
+
+  // Get current document to find end index
+  const docResponse = await fetch(`${GOOGLE_DOCS_API}/${docId}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    }
+  });
+
+  if (!docResponse.ok) {
+    throw new Error(`Failed to read document: ${docResponse.statusText}`);
+  }
+
+  const docData = await docResponse.json();
+  let currentIndex = docData.body.content[docData.body.content.length - 1].endIndex - 1;
+
+  const allRequests = [];
 
   // Build metadata header
   let headerParts = [
@@ -182,23 +564,85 @@ async function addContentWithMetadata(token, docId, content, metadata, source) {
   );
 
   const header = headerParts.join('\n');
-  const fullContent = header + content;
 
-  // Get current document to find end index
-  const docResponse = await fetch(`${GOOGLE_DOCS_API}/${docId}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
+  // Insert metadata header (always plain text)
+  allRequests.push({
+    insertText: {
+      location: { index: currentIndex },
+      text: header
     }
   });
+  currentIndex += header.length;
 
-  if (!docResponse.ok) {
-    throw new Error(`Failed to read document: ${docResponse.statusText}`);
+  // Handle content based on format
+  if (format === 'markdown') {
+    // Parse markdown content
+    const elements = parseMarkdown(content);
+
+    // Check if we should add TOC (3+ headings)
+    const headings = elements.filter(el => el.type === 'heading');
+    const shouldAddTOC = headings.length >= 3;
+
+    if (shouldAddTOC) {
+      // Generate TOC
+      const tocText = '📑 TABLE OF CONTENTS\n' + '─'.repeat(80) + '\n';
+      allRequests.push({
+        insertText: {
+          location: { index: currentIndex },
+          text: tocText
+        }
+      });
+      currentIndex += tocText.length;
+
+      // Add TOC entries
+      headings.forEach((heading, idx) => {
+        const indent = '  '.repeat(heading.level - 1);
+        const tocEntry = `${indent}${idx + 1}. ${heading.content}\n`;
+        allRequests.push({
+          insertText: {
+            location: { index: currentIndex },
+            text: tocEntry
+          }
+        });
+        currentIndex += tocEntry.length;
+      });
+
+      // Add separator after TOC
+      const separator = '\n' + '─'.repeat(80) + '\n\n';
+      allRequests.push({
+        insertText: {
+          location: { index: currentIndex },
+          text: separator
+        }
+      });
+      currentIndex += separator.length;
+    }
+
+    // Convert parsed markdown to Google Docs requests
+    const { requests: contentRequests, endIndex } = convertToGoogleDocsRequests(elements, currentIndex);
+    allRequests.push(...contentRequests);
+
+  } else if (format === 'plain') {
+    // Plain text - just insert as-is
+    allRequests.push({
+      insertText: {
+        location: { index: currentIndex },
+        text: content
+      }
+    });
+
+  } else if (format === 'rich') {
+    // Rich text - preserve HTML formatting (future enhancement)
+    // For now, fall back to plain text
+    allRequests.push({
+      insertText: {
+        location: { index: currentIndex },
+        text: content
+      }
+    });
   }
 
-  const docData = await docResponse.json();
-  const endIndex = docData.body.content[docData.body.content.length - 1].endIndex - 1;
-
-  // Insert content
+  // Execute all requests in a single batch update
   const updateResponse = await fetch(`${GOOGLE_DOCS_API}/${docId}:batchUpdate`, {
     method: 'POST',
     headers: {
@@ -206,19 +650,13 @@ async function addContentWithMetadata(token, docId, content, metadata, source) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      requests: [
-        {
-          insertText: {
-            location: { index: endIndex },
-            text: fullContent
-          }
-        }
-      ]
+      requests: allRequests
     })
   });
 
   if (!updateResponse.ok) {
-    throw new Error(`Failed to update document: ${updateResponse.statusText}`);
+    const errorText = await updateResponse.text();
+    throw new Error(`Failed to update document: ${updateResponse.statusText} - ${errorText}`);
   }
 }
 

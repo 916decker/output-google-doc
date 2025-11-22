@@ -317,6 +317,7 @@ async function handleQuickSave(answerElement) {
         content: content,
         metadata: {
           folderId: null, // Will use last used or root
+          format: 'markdown', // Default to markdown for Quick Save
           project: '',
           tags: keywords,
           notes: '',
@@ -401,6 +402,17 @@ async function showCustomModal(answerElement) {
           <select id="gdocs-folder" class="gdocs-select">
             <option value="">📂 My Drive</option>
           </select>
+        </div>
+
+        <!-- Format Selection -->
+        <div class="gdocs-form-group">
+          <label for="gdocs-format">📝 Format</label>
+          <select id="gdocs-format" class="gdocs-select">
+            <option value="markdown" selected>Markdown (headings, lists, code blocks)</option>
+            <option value="plain">Plain Text (no formatting)</option>
+            <option value="rich">Rich Text (preserve HTML)</option>
+          </select>
+          <small class="gdocs-hint">Markdown auto-generates table of contents if 3+ headings detected</small>
         </div>
 
         <!-- Project Name -->
@@ -574,6 +586,7 @@ async function handleModalSave() {
   if (!modal) return;
 
   const folderId = modal.querySelector('#gdocs-folder')?.value || null;
+  const format = modal.querySelector('#gdocs-format')?.value || 'markdown';
   const project = modal.querySelector('#gdocs-project')?.value.trim();
   const tagsValue = modal.querySelector('#gdocs-tags')?.value.trim();
   const tags = tagsValue ? tagsValue.split(',').map(t => t.trim()).filter(t => t) : [];
@@ -600,7 +613,7 @@ async function handleModalSave() {
       action: 'sendToGoogleDocsEnhanced',
       data: {
         content,
-        metadata: { folderId, project, tags, notes: '', docName },
+        metadata: { folderId, format, project, tags, notes: '', docName },
         source: {
           url: window.location.href,
           title: document.title,
