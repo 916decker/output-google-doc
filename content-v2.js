@@ -1,55 +1,203 @@
 /**
- * Content Script - OPTIMIZED FOR DAILY USE
+ * Content Script - OPTIMIZED FOR DAILY USE + FUTURE-PROOF
  * Two-button approach: Quick Save (1-click) + Save As (custom)
- * Works on Perplexity, Comet, and similar AI chat platforms
+ * Robust detection: Works even when platforms update their HTML
+ * Supports: ChatGPT, Claude, Gemini, Perplexity, Comet, and unknown platforms
  */
 
-// Configuration for different sites
-const SITE_CONFIGS = {
-  'www.perplexity.ai': {
-    answerSelector: '.prose, [class*="answer"], [class*="response"]',
-    insertPosition: 'afterend'
-  },
-  'comet.com': {
-    answerSelector: '.message-content, [class*="answer"], [class*="response"]',
-    insertPosition: 'afterend'
-  },
-  'chat.openai.com': {
-    answerSelector: '[data-message-author-role="assistant"], .agent-turn, [class*="markdown"]',
-    insertPosition: 'afterend'
-  },
-  'chatgpt.com': {
-    answerSelector: '[data-message-author-role="assistant"], .agent-turn, [class*="markdown"]',
-    insertPosition: 'afterend'
-  },
-  'claude.ai': {
-    answerSelector: '[data-is-streaming="false"], .font-claude-message, [class*="MessageContent"]',
-    insertPosition: 'afterend'
-  },
-  'gemini.google.com': {
-    answerSelector: '.model-response, [class*="response"], message-content',
-    insertPosition: 'afterend'
-  },
-  default: {
-    answerSelector: '[class*="answer"], [class*="response"], [class*="message"], [role="article"]',
-    insertPosition: 'afterend'
-  }
+// FALLBACK selectors (used only when universal detection fails)
+// These are platform-specific and may break on updates
+const FALLBACK_SELECTORS = {
+  'www.perplexity.ai': '.prose, [class*="answer"], [class*="response"]',
+  'comet.com': '.message-content, [class*="answer"], [class*="response"]',
+  'chat.openai.com': '[data-message-author-role="assistant"], .agent-turn, [class*="markdown"]',
+  'chatgpt.com': '[data-message-author-role="assistant"], .agent-turn, [class*="markdown"]',
+  'claude.ai': '[data-is-streaming="false"], .font-claude-message, [class*="MessageContent"]',
+  'gemini.google.com': '.model-response, [class*="response"], message-content'
 };
 
 // Track processed elements
 const processedElements = new WeakSet();
 
+/**
+ * UNIVERSAL DETECTION - Find action buttons (Copy, Share, Like, etc.)
+ * These exist on ALL AI platforms and rarely change
+ */
+function findActionButtons() {
+  const patterns = [
+    // Copy button (most universal)
+    'button[aria-label*="Copy" i]',
+    'button[title*="Copy" i]',
+    '[class*="copy" i][role="button"]',
+
+    // Share button
+    'button[aria-label*="Share" i]',
+    'button[title*="Share" i]',
+
+    // Like/Dislike buttons
+    'button[aria-label*="Good" i]',
+    'button[aria-label*="Bad" i]',
+    'button[aria-label*="Thumbs" i]',
+    '[aria-label*="upvote" i]',
+    '[aria-label*="downvote" i]',
+
+    // More/Actions menu
+    'button[aria-label*="More" i]',
+    '[aria-haspopup="menu"]',
+
+    // Regenerate/Retry
+    'button[aria-label*="Regenerate" i]',
+    'button[aria-label*="Retry" i]'
+  ];
+
+  const buttons = [];
+  patterns.forEach(pattern => {
+    try {
+      document.querySelectorAll(pattern).forEach(btn => buttons.push(btn));
+    } catch (e) {
+      // Invalid selector, skip
+    }
+  });
+
+  return buttons;
+}
+
+/**
+ * Walk up DOM tree from action button to find answer container
+ */
+function findAnswerContainer(actionButton) {
+  let current = actionButton;
+
+  // Walk up max 10 levels
+  for (let i = 0; i < 10; i++) {
+    current = current.parentElement;
+    if (!current) break;
+
+    // Check if this looks like an answer container
+    if (isLikelyAnswerContainer(current)) {
+      return current;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Heuristics to identify if element is an answer container
+ */
+function isLikelyAnswerContainer(element) {
+  // Must have substantial text
+  const text = element.textContent || '';
+  if (text.length < 50) return false;
+
+  // Skip if it's just a thin wrapper
+  if (element.children.length === 1) return false;
+
+  // Look for answer-like attributes/classes
+  const html = element.outerHTML.toLowerCase();
+  const answerKeywords = ['message', 'answer', 'response', 'content', 'assistant', 'model', 'ai', 'bot'];
+  const hasAnswerKeyword = answerKeywords.some(keyword => html.includes(keyword));
+
+  // Check for formatted content (paragraphs, lists, code blocks)
+  const hasFormatting = element.querySelector('p, ul, ol, pre, code, h1, h2, h3, h4') !== null;
+
+  // Pass if has keyword OR formatting (lenient)
+  return hasAnswerKeyword || hasFormatting;
+}
+
+/**
+ * SMART DETECTION: Try multiple strategies in order
+ */
+function findAllAnswers() {
+  const answers = new Set();
+
+  // STRATEGY 1: Universal detection (action buttons) - PRIMARY
+  const actionButtons = findActionButtons();
+  actionButtons.forEach(button => {
+    const container = findAnswerContainer(button);
+    if (container && !processedElements.has(container)) {
+      answers.add(container);
+    }
+  });
+
+  // STRATEGY 2: Platform-specific selectors - FALLBACK
+  if (answers.size === 0) {
+    const hostname = window.location.hostname;
+    const fallbackSelector = FALLBACK_SELECTORS[hostname];
+
+    if (fallbackSelector) {
+      try {
+        const elements = document.querySelectorAll(fallbackSelector);
+        elements.forEach(el => {
+          if (!processedElements.has(el) && extractTextContent(el).length > 50) {
+            answers.add(el);
+          }
+        });
+      } catch (e) {
+        console.warn('Fallback selector failed:', e);
+      }
+    }
+  }
+
+  // STRATEGY 3: Generic patterns - LAST RESORT
+  if (answers.size === 0) {
+    const genericPatterns = [
+      '[role="article"]',
+      'article',
+      '[class*="message"][class*="assistant" i]',
+      '[class*="response"][class*="content" i]',
+      '[data-message-author-role="assistant"]',
+      '.markdown-body'
+    ];
+
+    genericPatterns.forEach(pattern => {
+      try {
+        const elements = document.querySelectorAll(pattern);
+        elements.forEach(el => {
+          if (!processedElements.has(el) && extractTextContent(el).length > 100) {
+            answers.add(el);
+          }
+        });
+      } catch (e) {
+        // Skip invalid selectors
+      }
+    });
+  }
+
+  return Array.from(answers);
+}
+
+/**
+ * Find best insertion point for buttons (near existing action buttons)
+ */
+function findInsertionPoint(answerElement) {
+  // Look for action button containers
+  const actionContainers = answerElement.querySelectorAll(
+    '[class*="action" i], [class*="button" i][class*="group" i], [role="group"], [class*="toolbar" i]'
+  );
+
+  // Find the one closest to bottom (usually at end of answer)
+  let bestContainer = null;
+  let maxTop = 0;
+
+  actionContainers.forEach(container => {
+    try {
+      const rect = container.getBoundingClientRect();
+      if (rect.top > maxTop) {
+        maxTop = rect.top;
+        bestContainer = container;
+      }
+    } catch (e) {
+      // Skip if getBoundingClientRect fails
+    }
+  });
+
+  return bestContainer;
+}
+
 // Modal state
 let currentModal = null;
 let currentAnswerElement = null;
-
-/**
- * Get site configuration
- */
-function getSiteConfig() {
-  const hostname = window.location.hostname;
-  return SITE_CONFIGS[hostname] || SITE_CONFIGS.default;
-}
 
 /**
  * Create button group with Quick Save + Save As
@@ -506,7 +654,7 @@ function showNotification(message, type = 'success') {
 }
 
 /**
- * Inject button group
+ * Inject button group (with smart insertion)
  */
 function injectButton(answerElement) {
   if (processedElements.has(answerElement)) return;
@@ -530,23 +678,27 @@ function injectButton(answerElement) {
     showCustomModal(answerElement);
   });
 
-  // Insert
-  const config = getSiteConfig();
-  if (config.insertPosition === 'afterend') {
-    answerElement.insertAdjacentElement('afterend', buttonGroup);
+  // SMART INSERTION: Try to insert near existing action buttons
+  const insertionPoint = findInsertionPoint(answerElement);
+
+  if (insertionPoint) {
+    // Insert alongside existing UI controls (looks natural)
+    insertionPoint.appendChild(buttonGroup);
   } else {
-    answerElement.appendChild(buttonGroup);
+    // Fallback: insert at end of answer
+    answerElement.insertAdjacentElement('afterend', buttonGroup);
   }
 
   processedElements.add(answerElement);
 }
 
 /**
- * Process all answers
+ * Process all answers (using robust multi-layer detection)
  */
 function processAnswers() {
-  const config = getSiteConfig();
-  document.querySelectorAll(config.answerSelector).forEach(injectButton);
+  // Use the new robust detection system
+  const answers = findAllAnswers();
+  answers.forEach(answer => injectButton(answer));
 }
 
 /**
@@ -562,7 +714,7 @@ function init() {
 
   observer.observe(document.body, { childList: true, subtree: true });
 
-  console.log('✅ Send to Google Docs (v2 - Optimized) loaded');
+  console.log('✅ Send to Google Docs (v2 - Future-Proof) loaded');
 }
 
 if (document.readyState === 'loading') {
