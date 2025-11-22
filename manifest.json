@@ -50,7 +50,7 @@
     "128": "icon128.png"
   },
   "oauth2": {
-    "client_id": "YOUR_CLIENT_ID_HERE.apps.googleusercontent.com",
+    "client_id": "463330199298-aln1an4kc7m3p2g5nrjinl6javii771t.apps.googleusercontent.com",
     "scopes": [
       "https://www.googleapis.com/auth/documents",
       "https://www.googleapis.com/auth/drive.file",
