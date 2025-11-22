@@ -8,29 +8,103 @@ const GOOGLE_DOCS_API = 'https://docs.googleapis.com/v1/documents';
 const GOOGLE_DRIVE_API = 'https://www.googleapis.com/drive/v3/files';
 
 /**
- * Get OAuth2 access token
+ * Get OAuth2 access token (Universal - works in all Chromium browsers)
  */
 async function getAuthToken() {
+  // First, try to get cached token
+  const cached = await getCachedToken();
+  if (cached && !isTokenExpired(cached)) {
+    return cached.access_token;
+  }
+
+  // If no valid cached token, start OAuth flow
+  return await startOAuthFlow();
+}
+
+/**
+ * Start OAuth flow using launchWebAuthFlow (works in Comet, Brave, Edge, etc.)
+ */
+async function startOAuthFlow() {
+  const manifest = chrome.runtime.getManifest();
+  const clientId = manifest.oauth2.client_id;
+  const scopes = manifest.oauth2.scopes.join(' ');
+  const redirectUrl = chrome.identity.getRedirectURL();
+
+  // Build OAuth URL
+  const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  authUrl.searchParams.set('client_id', clientId);
+  authUrl.searchParams.set('response_type', 'token');
+  authUrl.searchParams.set('redirect_uri', redirectUrl);
+  authUrl.searchParams.set('scope', scopes);
+
   return new Promise((resolve, reject) => {
-    chrome.identity.getAuthToken({ interactive: true }, (token) => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        resolve(token);
+    chrome.identity.launchWebAuthFlow(
+      {
+        url: authUrl.toString(),
+        interactive: true
+      },
+      (redirectUrl) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+          return;
+        }
+
+        // Extract access token from redirect URL
+        const url = new URL(redirectUrl);
+        const params = new URLSearchParams(url.hash.substring(1)); // Remove # and parse
+        const accessToken = params.get('access_token');
+        const expiresIn = params.get('expires_in');
+
+        if (accessToken) {
+          // Cache the token
+          cacheToken(accessToken, expiresIn);
+          resolve(accessToken);
+        } else {
+          reject(new Error('No access token in response'));
+        }
       }
+    );
+  });
+}
+
+/**
+ * Cache token in storage
+ */
+async function cacheToken(accessToken, expiresIn) {
+  const expiresAt = Date.now() + (parseInt(expiresIn) * 1000);
+  await chrome.storage.local.set({
+    oauth_token: {
+      access_token: accessToken,
+      expires_at: expiresAt
+    }
+  });
+}
+
+/**
+ * Get cached token from storage
+ */
+async function getCachedToken() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['oauth_token'], (result) => {
+      resolve(result.oauth_token || null);
     });
   });
 }
 
 /**
+ * Check if token is expired
+ */
+function isTokenExpired(tokenData) {
+  if (!tokenData || !tokenData.expires_at) return true;
+  // Consider expired if less than 5 minutes remaining
+  return Date.now() >= (tokenData.expires_at - 300000);
+}
+
+/**
  * Remove cached auth token
  */
-async function removeAuthToken(token) {
-  return new Promise((resolve) => {
-    chrome.identity.removeCachedAuthToken({ token }, () => {
-      resolve();
-    });
-  });
+async function removeAuthToken() {
+  await chrome.storage.local.remove(['oauth_token']);
 }
 
 /**
