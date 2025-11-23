@@ -321,15 +321,20 @@ function htmlToMarkdown(element) {
         return content;
 
       case 'tr':
-        // Each table row becomes a new line with bullet
+        // Each table row becomes a new line
         const trimmedContent = content.trim();
         if (trimmedContent) {
+          // Don't add bullets if this is a header row
+          const isHeader = node.parentElement.tagName.toLowerCase() === 'thead';
+          if (isHeader) {
+            return trimmedContent + '\n\n';
+          }
           // If content looks like a numbered item (starts with digit), keep it
           // Otherwise add a bullet point
           if (/^\d+/.test(trimmedContent)) {
             return trimmedContent + '\n\n';
           } else {
-            return '- ' + trimmedContent + '\n\n';
+            return trimmedContent + '\n\n';  // Just add line breaks, no bullets
           }
         }
         return '';
@@ -847,6 +852,12 @@ function injectButton(answerElement) {
  * Process all answers (using robust multi-layer detection)
  */
 function processAnswers() {
+  // FIRST: Remove ALL existing buttons to prevent duplicates
+  document.querySelectorAll('.send-to-gdocs-container').forEach(btn => btn.remove());
+
+  // Clear the processed elements set
+  processedElements = new WeakSet();
+
   // Use the new robust detection system
   const answers = findAllAnswers();
 
