@@ -861,11 +861,16 @@ function processAnswers() {
   // Use the new robust detection system
   const answers = findAllAnswers();
 
+  console.log('🔍 Found', answers.length, 'AI answers on page');
+
   // ONLY inject button on the LAST answer (most recent)
   // This prevents duplicate buttons all over the page
   if (answers.length > 0) {
     const lastAnswer = answers[answers.length - 1];
+    console.log('💾 Injecting button on:', lastAnswer);
     injectButton(lastAnswer);
+  } else {
+    console.warn('⚠️ No AI answers detected on this page');
   }
 }
 
