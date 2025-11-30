@@ -848,29 +848,58 @@ function injectButton(answerElement) {
   processedElements.add(answerElement);
 }
 
+// Global observer to pause during updates
+let mutationObserver = null;
+let isProcessing = false;
+
 /**
  * Process all answers (using robust multi-layer detection)
  */
 function processAnswers() {
-  // FIRST: Remove ALL existing buttons to prevent duplicates
-  document.querySelectorAll('.send-to-gdocs-container').forEach(btn => btn.remove());
+  // Prevent overlapping executions
+  if (isProcessing) {
+    console.log('⏭️ Skipping processAnswers - already in progress');
+    return;
+  }
 
-  // Clear the processed elements set
-  processedElements = new WeakSet();
+  isProcessing = true;
 
-  // Use the new robust detection system
-  const answers = findAllAnswers();
+  try {
+    // FIRST: Remove ALL existing buttons to prevent duplicates
+    const existingButtons = document.querySelectorAll('.send-to-gdocs-container');
+    console.log('🗑️ Removing', existingButtons.length, 'existing buttons');
+    existingButtons.forEach(btn => btn.remove());
 
-  console.log('🔍 Found', answers.length, 'AI answers on page');
+    // Use the robust detection system
+    const answers = findAllAnswers();
+    console.log('🔍 Found', answers.length, 'AI answers on page');
 
-  // ONLY inject button on the LAST answer (most recent)
-  // This prevents duplicate buttons all over the page
-  if (answers.length > 0) {
-    const lastAnswer = answers[answers.length - 1];
-    console.log('💾 Injecting button on:', lastAnswer);
-    injectButton(lastAnswer);
-  } else {
-    console.warn('⚠️ No AI answers detected on this page');
+    // ONLY inject button on the LAST answer (most recent)
+    if (answers.length > 0) {
+      const lastAnswer = answers[answers.length - 1];
+      console.log('💾 Injecting button on last answer');
+
+      // Pause observer to prevent infinite loop
+      if (mutationObserver) {
+        mutationObserver.disconnect();
+      }
+
+      injectButton(lastAnswer);
+
+      // Resume observer after a brief delay
+      setTimeout(() => {
+        if (mutationObserver) {
+          mutationObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+          });
+        }
+      }, 100);
+    } else {
+      console.warn('⚠️ No AI answers detected on this page');
+    }
+  } finally {
+    isProcessing = false;
   }
 }
 
@@ -878,16 +907,23 @@ function processAnswers() {
  * Initialize
  */
 function init() {
-  processAnswers();
+  console.log('✅ Send to Google Docs (v2 - Future-Proof) loading...');
 
-  const observer = new MutationObserver(() => {
+  // Initial run
+  setTimeout(processAnswers, 1000); // Wait 1s for page to load
+
+  // Set up mutation observer
+  mutationObserver = new MutationObserver(() => {
     clearTimeout(window.gdocsProcessTimeout);
     window.gdocsProcessTimeout = setTimeout(processAnswers, 500);
   });
 
-  observer.observe(document.body, { childList: true, subtree: true });
+  mutationObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
 
-  console.log('✅ Send to Google Docs (v2 - Future-Proof) loaded');
+  console.log('✅ Send to Google Docs initialized');
 }
 
 if (document.readyState === 'loading') {
