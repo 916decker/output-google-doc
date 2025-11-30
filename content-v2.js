@@ -225,7 +225,7 @@ function createButtonGroup() {
 }
 
 /**
- * Convert HTML to Markdown
+ * Convert HTML to Markdown - SIMPLIFIED for maximum readability
  */
 function htmlToMarkdown(element) {
   const clone = element.cloneNode(true);
@@ -309,47 +309,35 @@ function htmlToMarkdown(element) {
       case 'blockquote':
         return '\n> ' + content.trim().replace(/\n/g, '\n> ') + '\n\n';
 
-      // Tables - convert to readable format
+      // Tables - COMPLETELY REDESIGNED for readability
       case 'table':
-        return '\n' + content + '\n';
+        // Get all rows
+        const rows = Array.from(node.querySelectorAll('tr'));
+        let tableMarkdown = '\n';
+
+        rows.forEach((row, idx) => {
+          const cells = Array.from(row.querySelectorAll('th, td'));
+          const rowText = cells.map(cell => cell.textContent.trim()).filter(t => t).join(' - ');
+
+          if (rowText) {
+            // First row (header) gets bold
+            if (idx === 0) {
+              tableMarkdown += '**' + rowText + '**\n\n';
+            } else {
+              // Numbered rows
+              tableMarkdown += idx + '. ' + rowText + '\n\n';
+            }
+          }
+        });
+
+        return tableMarkdown;
 
       case 'thead':
-        // Table headers - make them bold
-        return '**' + content.trim() + '**\n\n';
-
       case 'tbody':
-        return content;
-
       case 'tr':
-        // Each table row becomes a new line
-        const trimmedContent = content.trim();
-        if (trimmedContent) {
-          // Don't add bullets if this is a header row
-          const isHeader = node.parentElement.tagName.toLowerCase() === 'thead';
-          if (isHeader) {
-            return trimmedContent + '\n\n';
-          }
-          // If content looks like a numbered item (starts with digit), keep it
-          // Otherwise add a bullet point
-          if (/^\d+/.test(trimmedContent)) {
-            return trimmedContent + '\n\n';
-          } else {
-            return trimmedContent + '\n\n';  // Just add line breaks, no bullets
-          }
-        }
-        return '';
-
       case 'th':
       case 'td':
-        // Table cells - separate with spaces or line breaks
-        const cellContent = content.trim();
-        if (cellContent) {
-          // If this looks like it should be on its own line (long content)
-          if (cellContent.length > 50 || cellContent.includes('\n')) {
-            return cellContent + '\n';
-          }
-          return cellContent + ' ';
-        }
+        // Skip these - handled by table case above
         return '';
 
       // Divs and spans - just pass through content
@@ -848,58 +836,25 @@ function injectButton(answerElement) {
   processedElements.add(answerElement);
 }
 
-// Global observer to pause during updates
-let mutationObserver = null;
-let isProcessing = false;
-
 /**
- * Process all answers (using robust multi-layer detection)
+ * Process all answers - ULTRA-SIMPLE single button approach
  */
 function processAnswers() {
-  // Prevent overlapping executions
-  if (isProcessing) {
-    console.log('⏭️ Skipping processAnswers - already in progress');
-    return;
-  }
+  // Remove ALL existing buttons first
+  document.querySelectorAll('.send-to-gdocs-container').forEach(btn => btn.remove());
 
-  isProcessing = true;
+  // Find all AI answers
+  const answers = findAllAnswers();
 
-  try {
-    // FIRST: Remove ALL existing buttons to prevent duplicates
-    const existingButtons = document.querySelectorAll('.send-to-gdocs-container');
-    console.log('🗑️ Removing', existingButtons.length, 'existing buttons');
-    existingButtons.forEach(btn => btn.remove());
+  if (answers.length > 0) {
+    // Only inject on the VERY LAST answer
+    const lastAnswer = answers[answers.length - 1];
 
-    // Use the robust detection system
-    const answers = findAllAnswers();
-    console.log('🔍 Found', answers.length, 'AI answers on page');
-
-    // ONLY inject button on the LAST answer (most recent)
-    if (answers.length > 0) {
-      const lastAnswer = answers[answers.length - 1];
-      console.log('💾 Injecting button on last answer');
-
-      // Pause observer to prevent infinite loop
-      if (mutationObserver) {
-        mutationObserver.disconnect();
-      }
-
+    // Double-check it doesn't already have a button
+    if (!lastAnswer.querySelector('.send-to-gdocs-container')) {
       injectButton(lastAnswer);
-
-      // Resume observer after a brief delay
-      setTimeout(() => {
-        if (mutationObserver) {
-          mutationObserver.observe(document.body, {
-            childList: true,
-            subtree: true
-          });
-        }
-      }, 100);
-    } else {
-      console.warn('⚠️ No AI answers detected on this page');
+      console.log('✅ Button injected on latest answer');
     }
-  } finally {
-    isProcessing = false;
   }
 }
 
@@ -907,23 +862,24 @@ function processAnswers() {
  * Initialize
  */
 function init() {
-  console.log('✅ Send to Google Docs (v2 - Future-Proof) loading...');
+  console.log('✅ Send to Google Docs extension loading...');
 
-  // Initial run
-  setTimeout(processAnswers, 1000); // Wait 1s for page to load
+  // Run after 1 second to let page load
+  setTimeout(processAnswers, 1000);
 
-  // Set up mutation observer
-  mutationObserver = new MutationObserver(() => {
-    clearTimeout(window.gdocsProcessTimeout);
-    window.gdocsProcessTimeout = setTimeout(processAnswers, 500);
+  // Watch for new content with debouncing
+  let timeout;
+  const observer = new MutationObserver(() => {
+    clearTimeout(timeout);
+    timeout = setTimeout(processAnswers, 800);
   });
 
-  mutationObserver.observe(document.body, {
+  observer.observe(document.body, {
     childList: true,
     subtree: true
   });
 
-  console.log('✅ Send to Google Docs initialized');
+  console.log('✅ Extension initialized');
 }
 
 if (document.readyState === 'loading') {
