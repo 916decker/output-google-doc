@@ -1,297 +1,286 @@
-# 📄 Send to Google Docs
-## Chrome Extension for AI Chat Platforms
+# 📄 Send to Google Docs - Smart Organizer
 
-**One-click saving of AI answers from Perplexity, Comet, and other AI chat platforms directly to Google Docs.**
+**One-click save AI responses to organized Google Docs with folders, tags, and smart metadata.**
 
-![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue?logo=googlechrome)
-![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)
-![License](https://img.shields.io/badge/License-MIT-yellow)
-
----
-
-## 🎯 **What Does This Do?**
-
-This Chrome extension adds a **"Send to Google Docs"** button at the end of every AI answer on platforms like Perplexity and Comet.
-
-Click the button → Answer instantly appears in Google Docs → Keep researching!
-
-Perfect for:
-- 📚 **Research** - Save multiple answers to one document
-- 💼 **Work** - Archive important AI insights
-- 📝 **Learning** - Build a knowledge base from AI conversations
-- 🗂️ **Organization** - Keep all your AI answers in one searchable place
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Chrome](https://img.shields.io/badge/browser-Chrome%20%7C%20Edge%20%7C%20Brave%20%7C%20Comet-orange.svg)
 
 ---
 
-## ✨ **Features**
+## ✨ Features
 
-- ✅ **One-click export** - No copy-paste, no formatting issues
-- ✅ **Two save modes** - Append to one doc OR create new docs
-- ✅ **Smart metadata** - Includes source URL, timestamp, page title
-- ✅ **Fully customizable** - Choose doc names, organization style
-- ✅ **Works automatically** - Button appears on every AI answer
-- ✅ **Secure** - Direct Google API integration, no third-party servers
-- ✅ **Free forever** - No subscriptions, no hidden costs
+### 🚀 One-Click Save
+- **Quick Save**: Instant save with auto-tags, auto-naming, markdown formatting
+- **Custom Save**: Full control over folder, tags, project name, and format
 
----
+### 🌐 Universal Platform Support
+Works on **all major AI platforms**:
+- ✅ ChatGPT (OpenAI)
+- ✅ Claude (Anthropic)
+- ✅ Google Gemini
+- ✅ Perplexity
+- ✅ Comet Browser
+- ✅ Future platforms (future-proof detection)
 
-## 🚀 **Quick Start**
+### 📝 Beautiful Formatting
+Automatic HTML → Markdown conversion:
+- Headings, lists, tables, code blocks
+- Bold, italic, links preserved
+- Clean, readable output
+- Auto-generated Table of Contents (3+ headings)
 
-**Total time: 15 minutes**
-
-1. **Generate icons** (use `icon-generator.html`) → 5 min
-2. **Set up Google Cloud** (enable APIs, create OAuth credentials) → 8 min
-3. **Load extension** in Chrome → 2 min
-4. **Start using!** → 0 min
-
-👉 **[Read QUICKSTART.md](QUICKSTART.md)** for step-by-step instructions
-
-👉 **[Read INSTALL.md](INSTALL.md)** for detailed setup guide
-
----
-
-## 📁 **What's Included**
-
-```
-📦 send-to-google-docs/
-├── 📄 manifest.json          # Extension configuration
-├── 🎨 icon.svg               # Source icon file
-├── 🖼️ icon-generator.html    # Generate PNGs (no coding!)
-├── ⚙️ content.js             # Injects buttons into pages
-├── 💅 styles.css             # Button styling
-├── 🔧 background.js          # Google Docs API integration
-├── 🎛️ popup.html             # Settings interface
-├── 🎛️ popup.js               # Settings logic
-├── 📖 README.md              # This file
-├── ⚡ QUICKSTART.md          # Fast setup guide
-└── 📚 INSTALL.md             # Detailed instructions
-```
+### 🗂️ Smart Organization
+- Choose Google Drive folders
+- Auto-suggested tags from content
+- Project-based categorization
+- Full metadata (source, URL, timestamp)
 
 ---
 
-## 🎨 **Screenshots**
+## 🎬 Quick Start
 
-### The Button in Action
-When you get an AI answer, the button appears automatically:
+### 1. Create OAuth Credentials
 
-```
-┌──────────────────────────────────────────────┐
-│ [AI Answer content here...]                  │
-│                                              │
-│ [Detailed explanation...]                   │
-└──────────────────────────────────────────────┘
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project (or use existing)
+3. Enable **Google Docs API** and **Google Drive API**
+4. Create OAuth consent screen (Internal or External)
+5. Create **OAuth 2.0 Client ID**:
+   - Application type: **Web application**
+   - Add authorized redirect URI: `https://<your-extension-id>.chromiumapp.org/`
 
-    [📄 Send to Google Docs] ← Click here!
-```
+   > **Note**: You'll get the extension ID after loading the extension (step 2)
 
-### Settings Panel
-Customize how your docs are saved:
+### 2. Install Extension
 
-- **Save Mode**: Append to one doc OR create new docs
-- **Naming**: By date, source, or custom name
-- **Target Doc**: Specify which doc to append to
+1. Download/clone this repository
+2. Open `chrome://extensions/` (or `edge://extensions/`, `brave://extensions/`, etc.)
+3. Enable **Developer mode**
+4. Click **Load unpacked**
+5. Select the extension folder
+6. **Copy the Extension ID** shown on the extension card
 
----
+### 3. Configure OAuth
 
-## 🛠️ **How It Works**
+1. Go back to Google Cloud Console
+2. Edit your OAuth client
+3. Update redirect URI with your actual extension ID:
+   ```
+   https://YOUR-ACTUAL-EXTENSION-ID.chromiumapp.org/
+   ```
+4. Copy your **Client ID** (looks like: `123456789-abc123.apps.googleusercontent.com`)
 
-1. **Extension loads** when you visit Perplexity/Comet
-2. **Watches for AI answers** using smart selectors
-3. **Injects a button** below each answer
-4. **When clicked**:
-   - Extracts the answer text
-   - Authenticates with Google (first time only)
-   - Creates or appends to Google Doc
-   - Shows success notification
+### 4. Update manifest.json
 
-All processing happens in your browser - no external servers involved!
+Open `manifest.json` and update the `client_id`:
 
----
-
-## 🌐 **Supported Platforms**
-
-Currently works on:
-- ✅ **Perplexity.ai** - Fully tested
-- ✅ **Comet** - When available
-- ⚙️ **Other AI platforms** - Easily customizable
-
-**Want to add more sites?**
-Edit `manifest.json` → Add URLs to the `matches` array
-
----
-
-## 🔒 **Privacy & Security**
-
-- ✅ **No data collection** - We don't collect any user data
-- ✅ **Direct API calls** - Your content goes straight to Google
-- ✅ **No third-party servers** - Everything runs in your browser
-- ✅ **OAuth 2.0** - Industry-standard Google authentication
-- ✅ **You own your data** - All docs stored in YOUR Google Drive
-
----
-
-## ⚙️ **Customization**
-
-### Change Which Sites It Works On
-
-Edit `manifest.json`:
 ```json
-"matches": [
-  "https://www.perplexity.ai/*",
-  "https://comet.com/*",
-  "https://YOUR-SITE-HERE.com/*"  ← Add your site
-]
-```
-
-### Adjust Button Appearance
-
-Edit `styles.css`:
-```css
-.send-to-gdocs-btn {
-  background: #4285F4;  ← Change color
-  padding: 8px 16px;    ← Change size
-  /* ... customize more ... */
-}
-```
-
-### Add Custom Answer Selectors
-
-Edit `content.js`:
-```javascript
-const SITE_CONFIGS = {
-  'your-site.com': {
-    answerSelector: '.your-answer-class',  ← Add selector
-    insertPosition: 'afterend'
+{
+  "oauth2": {
+    "client_id": "YOUR-CLIENT-ID-HERE.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/documents",
+      "https://www.googleapis.com/auth/drive.file",
+      "https://www.googleapis.com/auth/drive.metadata.readonly"
+    ]
   }
 }
 ```
 
----
+### 5. Reload & Test
 
-## 🆘 **Troubleshooting**
-
-### Common Issues
-
-| Problem | Solution |
-|---------|----------|
-| Button not appearing | Refresh the page, check extension is enabled |
-| Authentication errors | Click "Test Connection" in extension popup |
-| Can't find Doc ID | Look in URL: `docs.google.com/document/d/ID_HERE/edit` |
-| Documents not saving | Check Google Drive storage, verify API is enabled |
-
-📖 **[See full troubleshooting guide in INSTALL.md](INSTALL.md#troubleshooting)**
+1. Go to `chrome://extensions/` and reload the extension
+2. Visit ChatGPT, Claude, or any supported platform
+3. Look for the **Quick Save** button at the end of AI responses
+4. Click it!
+5. First time: OAuth popup appears (grant access)
+6. Done! Document saved to Google Drive
 
 ---
 
-## 🎯 **Best Practices**
+## 🎯 Usage
 
-### For Research
-- Use **Append Mode** to collect all research in one doc
-- Create a dedicated folder in Google Drive
-- Name docs by date for easy chronological searching
+### Quick Save (Recommended)
+1. Get an AI response
+2. Click **Quick Save** button
+3. Done! ✅
 
-### For Work
-- Use **New Doc Mode** for each client/project
-- Use custom naming with project prefixes
-- Archive regularly to subfolders
+**What it does:**
+- Auto-generates document name (topic + timestamp)
+- Extracts keywords for tags
+- Formats as markdown
+- Saves to last-used folder (or root)
 
-### For Learning
-- Append mode with one doc per subject
-- Include keywords in custom doc names
-- Review and summarize periodically
-
----
-
-## 📊 **Comparison with Alternatives**
-
-| Solution | Setup Time | Reliability | Cost | Auto-Inject Button |
-|----------|-----------|------------|------|-------------------|
-| **This Extension** | 15 min | ⭐⭐⭐⭐⭐ | FREE | ✅ Yes |
-| Bookmarklet | 5 min | ⭐⭐⭐ | FREE | ❌ No (click each time) |
-| Zapier/Make | 20 min | ⭐⭐⭐ | $$ Monthly | ❌ Can't inject UI |
-| Copy-Paste | 0 min | ⭐⭐ | FREE | ❌ Manual every time |
+### Custom Save
+1. Get an AI response
+2. Click **⚙️ Settings** button
+3. Choose folder, add tags, set project name
+4. Click **Save to Drive**
 
 ---
 
-## 🤝 **Contributing**
+## 📊 Output Example
 
-Want to improve this extension?
+```markdown
+════════════════════════════════════════════════════════════════════════════════
+📄 DOCUMENT METADATA
+════════════════════════════════════════════════════════════════════════════════
 
-1. Fork the repo
-2. Make your changes
-3. Test thoroughly
-4. Submit a pull request
+🎯 Project: Machine Learning Research
+🏷️  Tags: python, neural-networks, tensorflow
 
-**Ideas welcome:**
-- Support for more AI platforms
-- Additional export formats (Notion, Evernote, etc.)
-- Enhanced formatting options
-- Tagging and categorization
+📌 Source: ChatGPT
+🔗 URL: https://chatgpt.com/c/abc123...
+📅 Saved: 2025-11-23, 2:30:15 PM
 
----
+════════════════════════════════════════════════════════════════════════════════
 
-## 📜 **License**
+# Introduction to Neural Networks
 
-MIT License - Use freely, modify as needed, no warranties provided.
+Neural networks are computational models inspired by biological neurons...
 
----
+## Types of Neural Networks
 
-## 🙋 **FAQ**
+1. Feedforward Neural Networks
+2. Convolutional Neural Networks (CNNs)
+3. Recurrent Neural Networks (RNNs)
 
-**Q: Does this work with ChatGPT?**
-A: Not currently - ChatGPT uses a different structure. You can modify `content.js` to add support.
+### Code Example
 
-**Q: Can I export to other formats besides Google Docs?**
-A: Currently Google Docs only, but the code can be modified to support other platforms.
+```python
+import tensorflow as tf
 
-**Q: Is my data private?**
-A: Yes! Everything goes directly from your browser to Google. No third-party servers involved.
+model = tf.keras.Sequential([
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(10, activation='softmax')
+])
+```
 
-**Q: Does this work on mobile?**
-A: Chrome extensions only work on desktop browsers currently.
-
-**Q: Can I share this with my team?**
-A: Yes! Each person needs to install it individually with their own Google credentials.
-
-**Q: What if Perplexity changes their design?**
-A: The extension might need updates to the answer selectors. Check for updates or modify `content.js`.
+**Important**: Always normalize your data before training!
+```
 
 ---
 
-## 📞 **Support**
+## 🛠️ Technical Details
 
-- 📖 **Documentation**: Read INSTALL.md and QUICKSTART.md
-- 🐛 **Found a bug?**: Open an issue on GitHub
-- 💡 **Feature request?**: Open an issue with [Feature] in title
-- 🤔 **Questions?**: Check the FAQ above first
+### Architecture
+- **Manifest V3** Chrome Extension
+- **Content Script**: Detects AI responses, injects buttons
+- **Service Worker**: Handles OAuth, Google APIs
+- **APIs**: Google Docs API, Google Drive API
+
+### File Structure
+```
+output-google-doc/
+├── manifest.json              # Extension configuration + OAuth client ID
+├── background-enhanced.js     # Service worker (OAuth, API calls)
+├── content-v2.js              # Content script (detection, UI injection)
+├── styles-enhanced.css        # Button and modal styling
+├── popup.html                 # Extension popup (optional)
+├── icon16.png                 # Extension icons
+├── icon48.png
+├── icon128.png
+├── SYSTEM_PROMPT.md           # Full documentation
+└── README.md                  # This file
+```
+
+### Detection Strategy
+**3-Layer Future-Proof System:**
+
+1. **Universal**: Find Copy/Share buttons → walk up DOM → find container
+2. **Platform-Specific**: Known selectors for each AI platform
+3. **Generic Fallback**: Semantic HTML patterns (`role="article"`, etc.)
+
+This ensures the extension works even when platforms update their HTML.
 
 ---
 
-## 🎉 **Credits**
+## 🐛 Troubleshooting
 
-Built for AI enthusiasts who want to save time and stay organized.
+### No button appears
+1. Open DevTools Console (F12)
+2. Look for: `✅ Extension initialized`
+3. Check: `🔍 Found X AI answers on page`
+4. If "Found 0": Platform not supported or HTML changed
 
-**Technologies Used:**
-- Chrome Extension Manifest V3
-- Google Docs API
-- Google Drive API
-- OAuth 2.0 Authentication
+**Solution**: Report issue with platform URL
+
+### OAuth errors
+
+**"redirect_uri_mismatch"**
+- Extension ID in manifest doesn't match Google Cloud Console
+- Update redirect URI in OAuth client settings
+
+**"Access blocked: This app's request is invalid"**
+- Using wrong OAuth client type (should be "Web application", NOT "Chrome Extension")
+- Create new Web Application OAuth client
+
+### Formatting issues
+
+**Tables not readable**
+- Some platforms use custom table HTML
+- Extension converts to numbered lists for readability
+
+**Missing formatting**
+- Check if content uses standard HTML tags
+- Report edge cases with example HTML
 
 ---
 
-## 📈 **Roadmap**
+## 🤝 Contributing
 
-Future improvements:
-- [ ] Support for ChatGPT
-- [ ] Support for Claude.ai
-- [ ] Export to Notion
-- [ ] Markdown formatting options
-- [ ] Batch export multiple answers
-- [ ] Search within saved answers
-- [ ] Tags and categories
+Contributions welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ---
 
-**Made with ❤️ for productivity**
+## 📝 Changelog
 
-⭐ **Star this repo** if you find it useful!
+### v2.0.0 (2025-11-23)
+- ✨ Complete redesign with future-proof detection
+- ✨ Simplified table formatting (numbered lists)
+- ✨ Ultra-reliable single-button injection
+- ✨ Web Application OAuth (works in all Chromium browsers)
+- ✨ Enhanced markdown parser
+- ✨ Auto-generated table of contents
+- 🐛 Fixed infinite loop issues
+- 🐛 Fixed button duplication bugs
+
+### v1.0.0 (Initial Release)
+- Basic save functionality
+- Platform-specific detection
+- Simple markdown conversion
+
+---
+
+## 📜 License
+
+MIT License - see [LICENSE](LICENSE) file for details
+
+---
+
+## 🙏 Acknowledgments
+
+- Built with Chrome Extension Manifest V3
+- Uses Google Docs API and Google Drive API
+- Inspired by the need for organized AI knowledge management
+
+---
+
+## 📞 Support
+
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/916decker/output-google-doc/issues)
+- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/916decker/output-google-doc/discussions)
+- 📖 **Documentation**: [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md)
+
+---
+
+**Made with ❤️ for the AI power-user community**
+
+⭐ Star this repo if you find it useful!
